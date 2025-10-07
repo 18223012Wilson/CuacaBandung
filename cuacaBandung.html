@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplikasi Cuaca Modern - Biru</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* Menggunakan font yang lebih modern jika tersedia */
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+
+        /* --- SKEMA WARNA BIRU --- */
+        :root {
+            --primary-color: #4A90E2; /* Biru langit */
+            --secondary-color: #8BC4F8; /* Biru muda */
+            --accent-color: #FFEB3B; /* Kuning cerah untuk ikon/highlight */
+            --background-color: #F0F2F5; /* Abu-abu muda (Background Halaman) */
+            --text-color: #FFFFFF; /* Teks putih untuk kartu cuaca */
+            --dark-text: #333333; /* Teks gelap untuk elemen terang */
+            --shadow-light: 0 4px 15px rgba(0, 0, 0, 0.08);
+            --shadow-strong: 0 15px 35px rgba(74, 144, 226, 0.3);
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--background-color); /* Background halaman abu-abu muda */
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 40px 20px;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        #main-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 800px; 
+            gap: 40px; 
+        }
+
+        /* --- STYLING KARTU UMUM --- */
+        .card {
+            /* Warna gradien biru untuk kartu cuaca */
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%); 
+            color: var(--text-color);
+            border-radius: 20px; 
+            box-shadow: var(--shadow-strong);
+            width: 100%;
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 45px rgba(74, 144, 226, 0.4);
+        }
+
+        /* --- SELECT BOX CONTAINER --- */
+        #city-selector-container {
+            width: 380px; 
+            max-width: 90%;
+            text-align: center;
+        }
+
+        #city-select {
+            padding: 12px 20px; 
+            font-size: 1.1em;
+            border-radius: 10px;
+            border: none;
+            background-color: white;
+            color: var(--dark-text);
+            box-shadow: var(--shadow-light);
+            cursor: pointer;
+            width: 100%;
+            max-width: 380px;
+            box-sizing: border-box;
+            transition: all 0.3s;
+        }
+        
+        #city-select:focus {
+            outline: 2px solid var(--primary-color);
+            box-shadow: 0 0 0 4px rgba(74, 144, 226, 0.3);
+        }
+
+        /* --- KARTU CUACA UTAMA --- */
+        #weather-card {
+            padding: 40px; 
+            min-height: 300px; 
+            text-align: center;
+            justify-content: space-between;
+            display: flex;
+            flex-direction: column;
+            width: 380px; 
+            max-width: 90%;
+        }
+
+        /* [CSS CUACA UTAMA] */
+        .header { text-align: left; margin-bottom: 25px; }
+        .location { font-size: 2.2em; font-weight: 700; display: block; line-height: 1.2; }
+        .country-name { font-size: 1em; opacity: 0.9; font-weight: 400; display: block; margin-top: 5px; }
+        .main-data { display: flex; align-items: center; justify-content: space-between; margin: 20px 0 40px 0; }
+        .temperature { 
+            font-size: 6.5em; 
+            font-weight: 300; 
+            line-height: 1; 
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        .icon-desc { display: flex; flex-direction: column; align-items: center; text-align: center; }
+        .weather-icon i { 
+            font-size: 4em; 
+            margin-bottom: 8px; 
+            color: var(--accent-color); /* Ikon kuning cerah */
+            text-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+        }
+        .description { font-size: 1.2em; font-weight: 600; text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1); }
+        .details { 
+            display: grid; 
+            grid-template-columns: repeat(3, 1fr); 
+            gap: 20px; 
+            padding-top: 25px; 
+            border-top: 1px solid rgba(255, 255, 255, 0.4); 
+            text-align: center; 
+        }
+        .detail-value { font-size: 1.3em; font-weight: 700; }
+        .detail-label { font-size: 0.8em; opacity: 0.8; font-weight: 400; margin-top: 4px; }
+
+        /* --- KOTAK DETAIL JSON (JSON STATIC BOX) --- */
+        #json-static-box {
+            background: #FFFFFF; /* Background kotak JSON putih bersih */
+            color: var(--dark-text); /* Teks gelap di kotak JSON */
+            box-shadow: var(--shadow-light);
+            padding: 30px 40px;
+        }
+
+        #json-static-box h2 {
+            color: var(--primary-color); /* Judul kotak JSON biru langit */
+            border-bottom: 2px solid #EEEEEE; 
+            padding-bottom: 15px;
+            margin-bottom: 30px;
+            font-size: 1.8em;
+            font-weight: 700;
+        }
+
+        .json-block {
+            margin-bottom: 20px;
+            padding: 10px 0;
+            border-top: 1px dashed #DDDDDD; 
+        }
+
+        .json-block:first-child { border-top: none; }
+        .json-block h3 { font-size: 1.4em; font-weight: 600; color: var(--dark-text); margin: 0 0 15px 0; }
+        .json-detail-list p { margin: 5px 0; font-size: 0.95em; line-height: 1.5; display: flex; gap: 15px; }
+        .json-detail-list strong { 
+            color: var(--primary-color); /* Kunci JSON biru langit */
+            font-weight: 500; 
+            min-width: 140px; 
+            display: inline-block; 
+        }
+        .json-detail-list .value { 
+            color: #555555; /* Nilai JSON abu-abu gelap */
+        }
+
+        /* --- TAMPILAN ERROR --- */
+        .loading-message { margin: auto; }
+        .card.error-state { background: linear-gradient(145deg, #FF6B6B, #FF4757); } 
+        .card.error-state .error-message { color: white; }
+        /* Pastikan pesan error di json-static-box terlihat */
+        #json-static-box .error-message { 
+            color: var(--primary-color) !important; /* Pesan error di JSON box jadi biru */
+        }
+        #json-static-box .error-message + p {
+            color: var(--dark-text) !important; /* Detail error tetap gelap */
+        }
+    </style>
+</head>
+<body>
+
+    <div id="main-wrapper">
+        <div id="city-selector-container">
+            <select id="city-select">
+                </select>
+        </div>
+
+        <div id="weather-card" class="card">
+            <div id="weather-info" class="loading-message">
+                Memuat data cuaca...
+            </div>
+        </div>
+        
+        <div id="json-static-box" class="card">
+            <h2>Data JSON Lengkap dari API</h2>
+            <div id="json-details-static">
+                <p class="loading-message">Memuat detail JSON...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- LOGIKA JAVASCRIPT ---
+        
+        // 1. DAFTAR KOTA YANG TERSEDIA
+        const CITIES = [
+            "Bandung",
+            "Jakarta",
+            "Surabaya",
+            "Yogyakarta",
+            "Medan",
+            "Denpasar"
+        ];
+        
+        const API_KEY = "717b64c259b63d6656a8032709d0a797"; 
+        const UNITS = "metric"; 
+        
+        // Elemen HTML
+        const citySelect = document.getElementById('city-select');
+        const weatherInfoDiv = document.getElementById('weather-info');
+        const jsonDetailsStaticDiv = document.getElementById('json-details-static');
+        const weatherCard = document.getElementById('weather-card');
+        
+        // 2. FUNGSI UNTUK MENGISI SELECT BOX
+        function populateCitySelect() {
+            citySelect.innerHTML = '';
+            CITIES.forEach(city => {
+                const option = document.createElement('option');
+                option.value = city;
+                option.textContent = city;
+                citySelect.appendChild(option);
+            });
+            // Atur pilihan default (Bandung)
+            citySelect.value = "Bandung";
+        }
+        
+        // 3. FUNGSI UTAMA UNTUK MENGAMBIL DATA CUACA (Diperbarui untuk menerima parameter kota)
+        async function fetchWeatherData(cityName) {
+            const API_URL = `https://api.openweathermap.org/data/2.5/weather?q=${cityName}&appid=${API_KEY}&units=${UNITS}`;
+
+            // Reset tampilan saat memuat
+            weatherCard.classList.remove('error-state');
+            weatherInfoDiv.innerHTML = `<p class="loading-message">Memuat cuaca ${cityName}...</p>`;
+            jsonDetailsStaticDiv.innerHTML = `<p class="loading-message">Memuat detail JSON...</p>`;
+            
+            try {
+                const response = await fetch(API_URL);
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(`Pesan: ${errorData.message}`);
+                }
+
+                const data = await response.json();
+                
+                displayWeatherInterface(data);
+                displayStaticJson(data);
+
+            } catch (error) {
+                // Penanganan Error
+                weatherCard.classList.add('error-state');
+                weatherInfoDiv.innerHTML = `<p class="error-message">Gagal memuat cuaca ${cityName}.</p><p style="font-size:0.8em;opacity:0.9;">${error.message}</p>`;
+
+                jsonDetailsStaticDiv.innerHTML = `
+                    <p class="error-message" style="color: var(--primary-color);">ERROR: Gagal memuat data JSON lengkap.</p>
+                    <p style="font-size: 0.9em; opacity: 0.8; color: var(--dark-text);">Pesan: ${error.message}</p>
+                `;
+                console.error("Kesalahan API:", error.message);
+            }
+        }
+        
+        // 4. EVENT LISTENER UNTUK PERUBAHAN PILIHAN KOTA
+        citySelect.addEventListener('change', (event) => {
+            const selectedCity = event.target.value;
+            fetchWeatherData(selectedCity);
+        });
+
+        // 5. FUNGSI ONLOAD: Memuat kota dan data cuaca awal
+        window.onload = () => {
+            populateCitySelect();
+            // Muat data cuaca untuk kota yang dipilih secara default (Bandung)
+            fetchWeatherData(citySelect.value); 
+        };
+
+        // --- FUNGSI-FUNGSI PEMBANTU (sama seperti sebelumnya) ---
+
+        // Fungsi ikon
+        function getIconClass(iconCode) {
+            switch (iconCode) {
+                case '01d': return 'fas fa-sun'; case '01n': return 'fas fa-moon'; 
+                case '02d': case '03d': return 'fas fa-cloud-sun'; 
+                case '02n': case '03n': return 'fas fa-cloud-moon'; 
+                case '04d': case '04n': return 'fas fa-cloud'; 
+                case '09d': case '09n': return 'fas fa-cloud-showers-heavy'; 
+                case '10d': case '10n': return 'fas fa-cloud-rain'; 
+                case '11d': case '11n': return 'fas fa-bolt'; 
+                case '13d': case '13n': return 'fas fa-snowflake'; 
+                case '50d': case '50n': return 'fas fa-smog'; 
+                default: return 'fas fa-circle-question'; 
+            }
+        }
+
+        function capitalizeWords(str) {
+            if (!str) return '';
+            return str.toLowerCase().split(' ').map(word => {
+                return word.charAt(0).toUpperCase() + word.slice(1);
+            }).join(' ');
+        }
+
+        function formatKey(key) {
+            return capitalizeWords(key.replace(/_/g, ' '));
+        }
+
+        // Fungsi Tampilan Cuaca Rapi
+        function displayWeatherInterface(data) {
+             const cityName = data.name;
+            const country = data.sys.country;
+            const temp = Math.round(data.main.temp);
+            const feelsLike = Math.round(data.main.feels_like);
+            const humidity = data.main.humidity;
+            const windSpeed = data.wind.speed.toFixed(1);
+            const description = capitalizeWords(data.weather[0].description);
+            const iconClass = getIconClass(data.weather[0].icon);
+
+            weatherInfoDiv.innerHTML = `
+                <div class="header">
+                    <span class="location">${cityName}</span>
+                    <span class="country-name">(${country})</span>
+                </div>
+
+                <div class="main-data">
+                    <div class="temperature">${temp}°C</div>
+                    <div class="icon-desc">
+                        <div class="weather-icon"><i class="${iconClass}"></i></div>
+                        <div class="description">${description}</div>
+                    </div>
+                </div>
+
+                <div class="details">
+                    <div class="detail-item">
+                        <div class="detail-value">${feelsLike}°C</div>
+                        <div class="detail-label">Terasa</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-value">${humidity}%</div>
+                        <div class="detail-label">Kelembapan</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-value">${windSpeed} m/s</div>
+                        <div class="detail-label">Angin</div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function formatValue(key, value) {
+            if (key === 'dt' || key === 'sunrise' || key === 'sunset') {
+                const date = new Date(value * 1000);
+                return `${date.toLocaleTimeString('id-ID')} (${date.toLocaleDateString('id-ID')})`;
+            }
+            if (key === 'timezone') {
+                 return `${value / 3600} hours (UTC)`;
+            }
+            return value;
+        }
+
+        function objectToHtmlList(obj, indent = 0) {
+            let html = '<div class="json-detail-list">';
+            if (Array.isArray(obj)) {
+                obj.forEach((item, index) => {
+                    html += `<p style="margin-left: ${indent * 15}px;"><strong>Item ${index + 1}:</strong></p>`;
+                    html += objectToHtmlList(item, indent + 1); 
+                });
+                return html + '</div>';
+            }
+
+            for (const key in obj) {
+                if (obj.hasOwnProperty(key)) {
+                    const value = obj[key];
+                    const formattedKey = formatKey(key);
+                    
+                    if (typeof value === 'object' && value !== null) {
+                        html += `<p style="margin-left: ${indent * 15}px;"><strong>${formattedKey}:</strong></p>`;
+                        html += objectToHtmlList(value, indent + 1);
+                    } else {
+                        html += `<p style="margin-left: ${indent * 15}px;"><strong>${formattedKey}:</strong><span class="value">${formatValue(key, value)}</span></p>`;
+                    }
+                }
+            }
+            return html + '</div>';
+        }
+
+
+        function displayStaticJson(data) {
+            jsonDetailsStaticDiv.innerHTML = '';
+            
+            const orderedKeys = ['coord', 'weather', 'main', 'wind', 'clouds', 'visibility', 'base', 'sys', 'timezone', 'id', 'name', 'dt', 'cod'];
+
+            orderedKeys.forEach(key => {
+                const value = data[key];
+
+                if (value === undefined) return;
+
+                const cardTitle = formatKey(key);
+                
+                const blockDiv = document.createElement('div');
+                blockDiv.classList.add('json-block');
+                
+                let blockContent = `<h3>${cardTitle}</h3>`;
+                blockContent += objectToHtmlList(value, 1);
+
+                blockDiv.innerHTML = blockContent;
+                jsonDetailsStaticDiv.appendChild(blockDiv);
+            });
+        }
+    </script>
+</body>
+</html>
